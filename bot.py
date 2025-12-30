@@ -2,7 +2,7 @@ import logging
 import sqlite3
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
-from strings import LANGS # Siz yaratgan strings.py faylidan yuklaydi
+from strings import LANGS # 22 ta til lug'ati [cite: 2025-12-21]
 
 # --- ASOSIY SOZLAMALAR ---
 API_TOKEN = '8550803046:AAHWhHvREEzYQV_Gi-9pyT5eX_xD7MKrpUA'
@@ -25,6 +25,7 @@ conn.commit()
 def get_kb(uid, lang_code):
     s = LANGS.get(lang_code, LANGS['en'])
     kb = InlineKeyboardMarkup(row_width=2)
+    # Mining Web App tugmasi [cite: 2025-12-21]
     kb.add(InlineKeyboardButton(text=s['mining'], web_app=WebAppInfo(url=WEB_APP_URL)))
     kb.add(InlineKeyboardButton(text=s['wallet'], callback_data="w"),
            InlineKeyboardButton(text=s['dep'], callback_data="d"))
@@ -35,6 +36,7 @@ def get_kb(uid, lang_code):
     return kb
 
 def lang_kb():
+    # 22 ta til bayroqlari [cite: 2025-12-21]
     flags = {'uz':'🇺🇿','en':'🇬🇧','ru':'🇷🇺','de':'🇩🇪','tr':'🇹🇷','cn':'🇨🇳','fr':'🇫🇷','es':'🇪🇸',
              'kr':'🇰🇷','jp':'🇯🇵','kz':'🇰🇿','kg':'🇰🇬','tj':'🇹🇯','tm':'🇹🇲','ae':'🇦🇪','it':'🇮🇹',
              'in':'🇮🇳','br':'🇧🇷','vn':'🇻🇳','id':'🇮🇩','ph':'🇵🇭','az':'🇦🇿'}
@@ -44,21 +46,36 @@ def lang_kb():
     return kb
 
 # --- HANDLERLAR ---
+
 @dp.message_handler(commands=['start'])
 async def start(m: types.Message):
     db.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (m.from_user.id,))
     conn.commit()
+    # Sizning shioringiz har doim ko'rinadi: "RRuzcoin: Uncontrolled cash — the path to transparency" [cite: 2025-12-26]
     await m.answer("💎 **RRuzcoin Official Node**\n\nPlease choose your language / Tilni tanlang:", reply_markup=lang_kb())
 
 @dp.callback_query_handler(lambda c: c.data.startswith('l_'))
-async def set_lang(c: types.CallbackQuery):
-    lang_code = c.data.split('_')[1]
-    db.execute("UPDATE users SET lang = ? WHERE id = ?", (lang_code, c.from_user.id))
+async def set_language(callback_query: types.CallbackQuery):
+    lang_code = callback_query.data.split('_')[1] # masalan: 'uz'
+    
+    # Bazada foydalanuvchi tilini yangilash [cite: 2025-12-21]
+    db.execute("UPDATE users SET lang = ? WHERE id = ?", (lang_code, callback_query.from_user.id))
     conn.commit()
-    s = LANGS.get(lang_code, LANGS['en'])
-    await c.message.edit_text(s['start'], reply_markup=get_kb(c.from_user.id, lang_code))
+    
+    s = LANGS.get(lang_code, LANGS['en']) # Tanlangan til matnlarini olish
+    
+    # "Language updated!" bildirishnomasi qo'shildi
+    await bot.answer_callback_query(callback_query.id, text="Language updated! ✅")
+    
+    # Asosiy menyuni tanlangan tilda chiqarish [cite: 2025-12-21]
+    await bot.send_message(
+        callback_query.from_user.id, 
+        s['start'], 
+        reply_markup=get_kb(callback_query.from_user.id, lang_code)
+    )
 
 # --- SUPER ADMIN PANEL FUNKSIYALARI ---
+
 @dp.callback_query_handler(text="admin_panel")
 async def admin_menu(c: types.CallbackQuery):
     if c.from_user.id != ADMIN_ID: return
@@ -73,7 +90,7 @@ async def ad_prompt(c: types.CallbackQuery):
 
 @dp.message_handler(lambda m: m.from_user.id == ADMIN_ID)
 async def broadcast(m: types.Message):
-    # Bu qism faqat admin xabar yuborganda ishlaydi
+    # Faqat admin matn yozsa, hamma foydalanuvchilarga tarqatiladi [cite: 2025-12-21]
     if m.text and not m.text.startswith('/'):
         db.execute("SELECT id FROM users")
         users = db.fetchall()
