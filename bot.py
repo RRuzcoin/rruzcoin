@@ -10,7 +10,11 @@ ADMIN_ID = 1424175786 # Sizning tasdiqlangan ID raqamingiz [cite: 2025-12-21]
 MY_CARD = "8600123456789012" # To'lovlar uchun karta [cite: 2025-12-21]
 WEB_APP_URL = "https://rruzcoin.github.io/rruzcoin/" # Mining interfeysi [cite: 2025-12-21]
 
-bot = Bot(token=API_TOKEN, parse_mode="Markdown")
+# --- PROXY SOZLAMASI (PythonAnywhere Free Tier uchun shart) ---
+# Bu qism Network unreachable xatosini tuzatadi
+proxy_url = "http://proxy.server:3128"
+
+bot = Bot(token=API_TOKEN, parse_mode="Markdown", proxy=proxy_url)
 dp = Dispatcher(bot)
 
 # --- MA'LUMOTLAR BAZASI ---
@@ -39,7 +43,7 @@ def lang_kb():
     # 22 ta til bayroqlari [cite: 2025-12-21]
     flags = {'uz':'🇺🇿','en':'🇬🇧','ru':'🇷🇺','de':'🇩🇪','tr':'🇹🇷','cn':'🇨🇳','fr':'🇫🇷','es':'🇪🇸',
              'kr':'🇰🇷','jp':'🇯🇵','kz':'🇰🇿','kg':'🇰🇬','tj':'🇹🇯','tm':'🇹🇲','ae':'🇦🇪','it':'🇮🇹',
-             'in':'🇮🇳','br':'🇧🇷','vn':'🇻🇳','id':'🇮🇩','ph':'🇵🇭','az':'🇦🇿'}
+             'in':'🇮🇳','br':'🇧🇷','vn':'VN','id':'🇮🇩','ph':'🇵🇭','az':'🇦🇿'}
     kb = InlineKeyboardMarkup(row_width=4)
     btns = [InlineKeyboardButton(text=v, callback_data=f"l_{k}") for k, v in flags.items()]
     kb.add(*btns)
@@ -51,23 +55,20 @@ def lang_kb():
 async def start(m: types.Message):
     db.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (m.from_user.id,))
     conn.commit()
-    # Sizning shioringiz har doim ko'rinadi: "RRuzcoin: Uncontrolled cash — the path to transparency" [cite: 2025-12-26]
+    # Sizning shioringiz: "RRuzcoin: Uncontrolled cash — the path to transparency" [cite: 2025-12-26]
     await m.answer("💎 **RRuzcoin Official Node**\n\nPlease choose your language / Tilni tanlang:", reply_markup=lang_kb())
 
 @dp.callback_query_handler(lambda c: c.data.startswith('l_'))
 async def set_language(callback_query: types.CallbackQuery):
-    lang_code = callback_query.data.split('_')[1] # masalan: 'uz'
+    lang_code = callback_query.data.split('_')[1]
     
-    # Bazada foydalanuvchi tilini yangilash [cite: 2025-12-21]
     db.execute("UPDATE users SET lang = ? WHERE id = ?", (lang_code, callback_query.from_user.id))
     conn.commit()
     
-    s = LANGS.get(lang_code, LANGS['en']) # Tanlangan til matnlarini olish
+    s = LANGS.get(lang_code, LANGS['en'])
     
-    # "Language updated!" bildirishnomasi qo'shildi
     await bot.answer_callback_query(callback_query.id, text="Language updated! ✅")
     
-    # Asosiy menyuni tanlangan tilda chiqarish [cite: 2025-12-21]
     await bot.send_message(
         callback_query.from_user.id, 
         s['start'], 
@@ -90,7 +91,6 @@ async def ad_prompt(c: types.CallbackQuery):
 
 @dp.message_handler(lambda m: m.from_user.id == ADMIN_ID)
 async def broadcast(m: types.Message):
-    # Faqat admin matn yozsa, hamma foydalanuvchilarga tarqatiladi [cite: 2025-12-21]
     if m.text and not m.text.startswith('/'):
         db.execute("SELECT id FROM users")
         users = db.fetchall()
