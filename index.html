@@ -4,13 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>RRuzcoin: Elite 3D Node</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             margin: 0; padding: 0;
             background: radial-gradient(circle at center, #0a1f3d 0%, #010816 100%);
-            color: white; font-family: 'Segoe UI', sans-serif;
+            color: white; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             display: flex; flex-direction: column; align-items: center;
             height: 100vh; overflow: hidden;
+            user-select: none;
         }
 
         .bg-overlay {
@@ -19,60 +21,73 @@
             opacity: 0.1; z-index: -1;
         }
 
-        .header { margin-top: 40px; text-align: center; }
+        .header { margin-top: 40px; text-align: center; z-index: 1; }
         
         .balance-container {
             background: rgba(0, 0, 0, 0.7);
-            padding: 10px 25px; border-radius: 20px;
+            padding: 12px 25px; border-radius: 25px;
             border: 1px solid rgba(255, 215, 0, 0.5);
-            display: inline-flex; align-items: center; gap: 8px;
+            display: inline-flex; align-items: center; gap: 10px;
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
         }
 
-        .balance-text { font-size: 22px; font-weight: bold; font-family: 'Courier New', monospace; }
-        .currency { color: #ffd700; }
+        .balance-text { 
+            font-size: 24px; font-weight: bold; 
+            font-family: 'Courier New', monospace; 
+            letter-spacing: 1px;
+        }
+        .currency { color: #ffd700; font-weight: 900; }
 
-        /* HAQIQIY 3D TANGA */
+        .slogan {
+            color: #ffd700; font-size: 11px; margin-top: 15px;
+            font-style: italic; opacity: 0.8; letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* 3D TANGA DINAMIKASI */
         .coin-wrapper {
-            position: relative; margin: 60px 0;
+            position: relative; margin: 50px 0;
             perspective: 1000px;
         }
 
         .gold-coin {
-            width: 240px; height: 240px;
+            width: 260px; height: 260px;
             background: radial-gradient(circle at 35% 35%, #fff176, #ffd700 50%, #b8860b 90%);
             border-radius: 50%;
-            border: 6px solid #ffdb4d;
-            box-shadow: 0 0 50px rgba(255, 215, 0, 0.3), inset -4px -4px 12px rgba(0,0,0,0.4);
+            border: 8px solid #ffdb4d;
+            box-shadow: 0 0 60px rgba(255, 215, 0, 0.4), inset -5px -5px 15px rgba(0,0,0,0.5);
             display: flex; justify-content: center; align-items: center;
             transform-style: preserve-3d;
             animation: coin-rotate 5s linear infinite;
+            cursor: pointer;
         }
 
-        /* RASMDAGI RR MONOGRAMMASI (KOD BILAN) */
+        /* "RR" MONOGRAMMA DIZAYNI */
         .rr-logo {
-            font-size: 100px; font-weight: 900;
-            color: rgba(92, 67, 0, 0.9);
+            font-size: 110px; font-weight: 900;
+            color: rgba(70, 50, 0, 0.9);
             position: relative; font-family: 'Arial Black', sans-serif;
-            letter-spacing: -6px;
-            transform: translateZ(10px);
+            letter-spacing: -8px;
+            transform: translateZ(20px); /* 3D chuqurlik uchun */
+            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
         }
 
-        /* Rasmdagi o'sha markaziy gorizontal chiziq */
+        /* Markaziy gorizontal chiziq */
         .rr-logo::after {
             content: ''; position: absolute;
-            width: 120%; height: 4px;
-            background: rgba(92, 67, 0, 0.8);
-            left: -10%; top: 52%;
+            width: 115%; height: 5px;
+            background: rgba(70, 50, 0, 0.8);
+            left: -7.5%; top: 52%;
             box-shadow: 0 1px 2px rgba(255,255,255,0.2);
         }
 
-        /* Rasmdagi pastki gorizontal chiziqchalar (纹理) */
+        /* Pastki gorizontal chiziqchalar */
         .rr-logo::before {
             content: '≡≡≡'; 
             position: absolute;
-            font-size: 40px;
-            bottom: -5px; left: 10px;
-            letter-spacing: 2px;
+            font-size: 45px;
+            bottom: -8px; left: 15px;
+            letter-spacing: 3px;
             opacity: 0.7;
         }
 
@@ -84,28 +99,27 @@
         .start-btn {
             background: linear-gradient(135deg, #0088ff 0%, #0055aa 100%);
             color: white; border: none;
-            padding: 16px 80px; border-radius: 35px;
-            font-size: 20px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 10px 30px rgba(0, 136, 255, 0.3);
-            transition: 0.3s;
+            padding: 18px 90px; border-radius: 40px;
+            font-size: 22px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 10px 40px rgba(0, 136, 255, 0.4);
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 10;
         }
 
-        .slogan {
-            color: #ffd700; font-size: 11px; margin-top: 15px;
-            font-style: italic; opacity: 0.8;
-        }
+        .start-btn:active { transform: scale(0.95); }
 
         .nav-footer {
-            position: absolute; bottom: 30px; width: 85%;
+            position: absolute; bottom: 30px; width: 90%;
             display: flex; justify-content: space-around;
-            background: rgba(0, 0, 0, 0.8);
-            padding: 15px; border-radius: 25px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255,215,0,0.1);
+            background: rgba(0, 0, 0, 0.85);
+            padding: 18px; border-radius: 30px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,215,0,0.2);
         }
         
-        .nav-icon { color: #888; font-size: 13px; text-align: center; }
-        .active { color: #0088ff; font-weight: bold; }
+        .nav-icon { color: #888; font-size: 14px; text-align: center; transition: 0.3s; cursor: pointer; }
+        .nav-icon:hover { color: #ffd700; }
+        .active { color: #0088ff; font-weight: bold; text-shadow: 0 0 10px rgba(0, 136, 255, 0.5); }
     </style>
 </head>
 <body>
@@ -120,7 +134,7 @@
     </div>
 
     <div class="coin-wrapper">
-        <div class="gold-coin" id="coin">
+        <div class="gold-coin" id="coin" onclick="manualTap()">
             <div class="rr-logo">RR</div>
         </div>
     </div>
@@ -128,38 +142,63 @@
     <button class="start-btn" id="mainBtn" onclick="toggleMining()">START MINING</button>
 
     <div class="nav-footer">
-        <div class="nav-icon">📁<br>Wallet</div>
-        <div class="nav-icon active">🚀<br>Boost</div>
-        <div class="nav-icon">🏆<br>Ranking</div>
+        <div class="nav-icon">💳<br>Wallet</div>
+        <div class="nav-icon active">⛏️<br>Mining</div>
+        <div class="nav-icon">📈<br>Stats</div>
+        <div class="nav-icon">👥<br>Friends</div>
     </div>
 
     <script>
+        // Telegram WebApp sozlamalari
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.ready();
+
         let balance = parseFloat(localStorage.getItem('rrzc_balance')) || 0;
-        const speed = 0.00000000000001; 
+        const autoSpeed = 0.00000000000001; 
+        const tapPower = 0.00000000000005;
         let isMining = false;
         let miningInterval;
 
-        document.getElementById('balance').innerText = balance.toFixed(14);
+        const balanceEl = document.getElementById('balance');
+        const btn = document.getElementById('mainBtn');
+        const coin = document.getElementById('coin');
+
+        balanceEl.innerText = balance.toFixed(14);
+
+        function updateBalance(amount) {
+            balance += amount;
+            balanceEl.innerText = balance.toFixed(14);
+            localStorage.setItem('rrzc_balance', balance);
+        }
 
         function toggleMining() {
-            const btn = document.getElementById('mainBtn');
-            const coin = document.getElementById('coin');
             isMining = !isMining;
             if (isMining) {
-                btn.innerText = 'STOP MINING';
-                btn.style.background = '#ff4400';
-                coin.style.animationDuration = '1.5s'; 
-                miningInterval = setInterval(() => {
-                    balance += speed;
-                    document.getElementById('balance').innerText = balance.toFixed(14);
-                    localStorage.setItem('rrzc_balance', balance);
-                }, 1000);
+                // Mining boshlandi
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                btn.innerText = 'STOP NODE';
+                btn.style.background = 'linear-gradient(135deg, #ff4400 0%, #cc3300 100%)';
+                coin.style.animationDuration = '1s'; 
+                miningInterval = setInterval(() => updateBalance(autoSpeed), 1000);
             } else {
+                // Mining to'xtadi
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
                 btn.innerText = 'START MINING';
                 btn.style.background = 'linear-gradient(135deg, #0088ff 0%, #0055aa 100%)';
                 coin.style.animationDuration = '5s';
                 clearInterval(miningInterval);
             }
+        }
+
+        function manualTap() {
+            // Tanga ustiga bosilganda kichik bonus va vibratsiya
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            updateBalance(tapPower);
+            
+            // Bosish effekti (visual scale)
+            coin.style.transform = 'scale(0.98)';
+            setTimeout(() => coin.style.transform = 'scale(1)', 100);
         }
     </script>
 </body>
