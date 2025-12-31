@@ -3,118 +3,142 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RRuzcoin: Elite Mining</title>
+    <title>RRuzcoin Elite Node</title>
     <style>
         body {
             margin: 0; padding: 0;
-            background-color: #01050c;
+            background-color: #010816;
             color: white;
             font-family: 'Segoe UI', sans-serif;
             display: flex; flex-direction: column; align-items: center;
             height: 100vh; overflow: hidden;
-            background-image: radial-gradient(circle at center, #05101f 0%, #01050c 100%);
+            background-image: radial-gradient(circle at center, #0a1f3d 0%, #010816 100%);
         }
 
-        .circuit-bg {
+        /* Mikrosxema chiziqlari (Circuit Lines) - */
+        .bg-lines {
             position: absolute; width: 100%; height: 100%;
             background-image: url('https://www.transparenttextures.com/patterns/circuit-board.png');
-            opacity: 0.05; z-index: -1;
+            opacity: 0.15; z-index: -1;
         }
 
-        .header { margin-top: 40px; text-align: center; }
+        .header { margin-top: 40px; text-align: center; z-index: 10; }
         
         .balance-container {
-            background: rgba(255, 215, 0, 0.05);
-            padding: 15px 30px; border-radius: 30px;
-            border: 1px solid rgba(255, 215, 0, 0.15);
+            background: rgba(0, 0, 0, 0.6);
+            padding: 12px 25px; border-radius: 25px;
+            border: 1px solid rgba(255, 215, 0, 0.4);
             display: inline-flex; align-items: center; gap: 10px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
         }
 
         .balance-text { font-size: 20px; font-weight: bold; color: #fff; font-family: 'Courier New', monospace; }
         .currency { color: #ffd700; font-size: 16px; font-weight: bold; }
 
+        /* Professional 3D Tanga Dizayni - */
         .coin-box {
-            position: relative; margin: 50px 0;
-            width: 230px; height: 230px;
+            position: relative; margin: 60px 0;
+            width: 240px; height: 240px;
             display: flex; justify-content: center; align-items: center;
+            perspective: 1000px;
         }
 
         .gold-coin {
-            width: 210px; height: 210px;
-            background: linear-gradient(135deg, #ffd700 0%, #b8860b 50%, #8b6508 100%);
+            width: 220px; height: 220px;
+            background: radial-gradient(circle at 30% 30%, #fff7ad, #ffd700 40%, #b8860b 80%);
             border-radius: 50%;
             border: 5px solid #ffdb4d;
-            box-shadow: 0 0 80px rgba(255, 215, 0, 0.3);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6), inset -5px -5px 15px rgba(0,0,0,0.3);
             display: flex; justify-content: center; align-items: center;
-            animation: rotate-3d 6s ease-in-out infinite;
+            transform: rotateY(20deg); /* Skrinshotdagi burchak */
+            animation: coin-glow 3s ease-in-out infinite alternate;
         }
 
-        .rr-logo {
-            font-size: 85px; font-weight: 900;
-            color: #2a1e00; text-shadow: 1px 1px 0px rgba(255,255,255,0.3);
-            letter-spacing: -6px;
+        /* Professional RR Monogramma - */
+        .rr-monogram {
+            font-size: 90px; font-weight: 900;
+            color: #5c4300;
+            position: relative;
+            font-family: 'Arial Black', sans-serif;
+            letter-spacing: -5px;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.2);
+            display: flex; align-items: center;
         }
 
-        @keyframes rotate-3d {
-            0%, 100% { transform: perspective(500px) rotateY(-10deg); }
-            50% { transform: perspective(500px) rotateY(10deg); }
+        /* Monogrammadagi vertikal valyuta chiziqlari */
+        .rr-monogram::before {
+            content: ''; position: absolute;
+            width: 8px; height: 115px;
+            background: #5c4300; left: 22px; top: -12px;
+            box-shadow: 48px 0 0 #5c4300; opacity: 0.9;
+        }
+
+        /* Monogramma gorizontal kesimi */
+        .rr-monogram::after {
+            content: ''; position: absolute;
+            width: 110%; height: 4px;
+            background: #ffd700; left: -5%; top: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        @keyframes coin-glow {
+            from { box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 20px rgba(255, 215, 0, 0.1); }
+            to { box-shadow: 0 20px 50px rgba(0,0,0,0.6), 0 0 60px rgba(255, 215, 0, 0.4); }
         }
 
         .start-btn {
-            background: linear-gradient(135deg, #005580 0%, #0088cc 100%);
+            background: linear-gradient(135deg, #0077b3 0%, #00aaff 100%);
             color: white; border: none;
-            padding: 18px 80px; border-radius: 40px;
-            font-size: 22px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 8px 25px rgba(0, 136, 204, 0.3);
-            transition: 0.3s;
+            padding: 16px 70px; border-radius: 35px;
+            font-size: 20px; font-weight: bold;
+            cursor: pointer; box-shadow: 0 5px 20px rgba(0, 170, 255, 0.4);
+            z-index: 10; transition: 0.3s;
         }
 
         .nav-footer {
             position: absolute; bottom: 30px;
             width: 85%; display: flex; justify-content: space-around;
-            background: rgba(0, 0, 0, 0.6);
+            background: rgba(0, 0, 0, 0.7);
             padding: 15px; border-radius: 25px;
             border: 1px solid rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
         }
         
-        .nav-icon { color: #666; font-size: 14px; }
-        .active { color: #0088cc; font-weight: bold; }
+        .nav-icon { color: #888; font-size: 13px; text-align: center; }
+        .active { color: #00aaff; font-weight: bold; }
     </style>
 </head>
 <body>
-    <div class="circuit-bg"></div>
+    <div class="bg-lines"></div>
 
     <div class="header">
         <div class="balance-container">
             <span class="balance-text" id="balance">0.00000000000000</span>
             <span class="currency">RRZC</span>
         </div>
-        <p style="color: #444; font-size: 11px; margin-top: 10px;">ELITE SPEED: 0.00000000000001/s</p>
+        <p style="color: #555; font-size: 11px; margin-top: 10px;">⚡ SPEED: 1x</p>
     </div>
 
     <div class="coin-box">
         <div class="gold-coin">
-            <div class="rr-logo">RR</div>
+            <div class="rr-monogram">RR</div>
         </div>
     </div>
 
-    <button class="start-btn" id="mainBtn" onclick="toggleMining()">START</button>
+    <button class="start-btn" id="mainBtn" onclick="toggleMining()">START MINING</button>
 
     <div class="nav-footer">
-        <div class="nav-icon">📁 Wallet</div>
-        <div class="nav-icon active">🚀 Boost</div>
-        <div class="nav-icon">🏆 Rank</div>
+        <div class="nav-icon">📁<br>Wallet</div>
+        <div class="nav-icon active">🚀<br>Boost</div>
+        <div class="nav-icon">🏆<br>Ranking</div>
     </div>
 
     <script>
-        // Local Storage'dan eski balansni yuklash, bo'lmasa 0 dan boshlash
         let balance = parseFloat(localStorage.getItem('rrzc_balance')) || 0.00000000000000;
         const speed = 0.00000000000001; 
         let isMining = false;
         let miningInterval;
 
-        // Sahifa yuklanganda balansni ko'rsatish
         document.getElementById('balance').innerText = balance.toFixed(14);
 
         function toggleMining() {
@@ -122,17 +146,16 @@
             isMining = !isMining;
             
             if (isMining) {
-                btn.innerText = 'STOP';
-                btn.style.background = 'linear-gradient(135deg, #801100 0%, #cc1b00 100%)';
+                btn.innerText = 'STOP MINING';
+                btn.style.background = 'linear-gradient(135deg, #a30000 0%, #ff1a1a 100%)';
                 miningInterval = setInterval(() => {
                     balance += speed;
                     document.getElementById('balance').innerText = balance.toFixed(14);
-                    // Har soniyada balansni xotiraga saqlash
                     localStorage.setItem('rrzc_balance', balance);
                 }, 1000);
             } else {
-                btn.innerText = 'START';
-                btn.style.background = 'linear-gradient(135deg, #005580 0%, #0088cc 100%)';
+                btn.innerText = 'START MINING';
+                btn.style.background = 'linear-gradient(135deg, #0077b3 0%, #00aaff 100%)';
                 clearInterval(miningInterval);
             }
         }
