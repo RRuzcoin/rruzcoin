@@ -22,6 +22,9 @@ db.execute('''CREATE TABLE IF NOT EXISTS users
     (id INTEGER PRIMARY KEY, b REAL DEFAULT 0, speed REAL DEFAULT 0.00000000000001, 
     dep REAL DEFAULT 0, lang TEXT DEFAULT 'en', status TEXT DEFAULT 'active')''')
 
+# ESKI FOYDALANUVCHILARNI YANGI TEZLIKKA O'TKAZISH (Muhim!)
+db.execute("UPDATE users SET speed = 0.00000000000001 WHERE speed > 0.00000000000001")
+
 db.execute('''CREATE TABLE IF NOT EXISTS payments 
     (id INTEGER PRIMARY KEY AUTOINCREMENT, uid INTEGER, amount REAL, method TEXT, status TEXT DEFAULT 'pending')''')
 db.execute('''CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)''')
@@ -35,23 +38,24 @@ conn.commit()
 def get_kb(uid, lang_code):
     s = LANGS.get(lang_code, LANGS['en'])
     kb = InlineKeyboardMarkup(row_width=2)
-    kb.add(InlineKeyboardButton(text=s['mining'], web_app=WebAppInfo(url=WEB_APP_URL)))
-    kb.add(InlineKeyboardButton(text=s['wallet'], callback_data="w"),
-           InlineKeyboardButton(text=s['dep'], callback_data="d"))
-    kb.add(InlineKeyboardButton(text=s['stats'], callback_data="s"))
-    kb.add(InlineKeyboardButton(text="📞 Aloqa / Support", url="https://t.me/RRuzcoinofficial"))
+    # Yangi dizayn ruhidagi tugmalar
+    kb.add(InlineKeyboardButton(text="🚀 " + s['mining'], web_app=WebAppInfo(url=WEB_APP_URL)))
+    kb.add(InlineKeyboardButton(text="📁 " + s['wallet'], callback_data="w"),
+           InlineKeyboardButton(text="💰 " + s['dep'], callback_data="d"))
+    kb.add(InlineKeyboardButton(text="📊 " + s['stats'], callback_data="s"))
+    kb.add(InlineKeyboardButton(text="📞 Support", url="https://t.me/RRuzcoinofficial"))
     if int(uid) == ADMIN_ID:
-        kb.add(InlineKeyboardButton(text="🛠 SUPER ADMIN PANEL", callback_data="admin_main"))
+        kb.add(InlineKeyboardButton(text="🛠 ADMIN PANEL", callback_data="admin_main"))
     return kb
 
 def admin_kb():
     kb = InlineKeyboardMarkup(row_width=1)
     kb.add(
-        InlineKeyboardButton("📢 Xabar yuborish (AD)", callback_data="admin_ad"),
-        InlineKeyboardButton("👥 Foydalanuvchilarni boshqarish", callback_data="admin_users"),
-        InlineKeyboardButton("💰 Depozitlar va To'lovlar", callback_data="admin_pays"),
-        InlineKeyboardButton("💳 Hamyon va Kartani ulash", callback_data="admin_settings"),
-        InlineKeyboardButton("❌ Paneldan chiqish", callback_data="close_admin")
+        InlineKeyboardButton("📢 AD (Reklama)", callback_data="admin_ad"),
+        InlineKeyboardButton("👥 Users", callback_data="admin_users"),
+        InlineKeyboardButton("💰 Payments", callback_data="admin_pays"),
+        InlineKeyboardButton("💳 Settings", callback_data="admin_settings"),
+        InlineKeyboardButton("❌ Close", callback_data="close_admin")
     )
     return kb
 
@@ -70,6 +74,7 @@ def lang_kb():
 async def start(m: types.Message):
     db.execute("INSERT OR IGNORE INTO users (id) VALUES (?)", (m.from_user.id,))
     conn.commit()
+    # Sizning shioringiz [cite: 2025-12-26]
     await m.answer("💎 **RRuzcoin Official Node**\n\nRRuzcoin: Uncontrolled cash — the path to transparency.", reply_markup=lang_kb())
 
 @dp.callback_query_handler(lambda c: c.data.startswith('l_'))
@@ -81,14 +86,14 @@ async def set_language(c: types.CallbackQuery):
     await bot.answer_callback_query(c.id, text="Language updated! ✅")
     await bot.send_message(c.from_user.id, s['start'], reply_markup=get_kb(c.from_user.id, lang_code))
 
-# --- SUPER ADMIN PANEL LOGIKASI ---
+# --- ADMIN PANEL LOGIKASI ---
 
 @dp.callback_query_handler(text="admin_main")
 async def admin_main(c: types.CallbackQuery):
     if c.from_user.id != ADMIN_ID: return
     db.execute("SELECT COUNT(*) FROM users")
     count = db.fetchone()[0]
-    await c.message.edit_text(f"🛠 **RRuzcoin Super Admin Panel**\n\n👤 Foydalanuvchilar: {count}\n🚀 Node holati: Faol ✅", reply_markup=admin_kb())
+    await c.message.edit_text(f"🛠 **RRuzcoin Super Admin Panel**\n\n👤 Foydalanuvchilar: {count}\n🚀 Status: Online ✅", reply_markup=admin_kb())
 
 @dp.callback_query_handler(text="admin_settings")
 async def admin_settings(c: types.CallbackQuery):
@@ -96,24 +101,9 @@ async def admin_settings(c: types.CallbackQuery):
     card = db.fetchone()[0]
     db.execute("SELECT value FROM settings WHERE key='wallet'")
     wallet = db.fetchone()[0]
-    text = f"⚙️ **To'lov sozlamalari**\n\n💳 Karta: `{card}`\n🪙 Hamyon: `{wallet}`\n\nO'zgartirish uchun `SET_CARD: raqam` yoki `SET_WALLET: manzil` deb xabar yuboring."
+    text = f"⚙️ **To'lov sozlamalari**\n\n💳 Karta: `{card}`\n🪙 Hamyon: `{wallet}`"
     kb = InlineKeyboardMarkup().add(InlineKeyboardButton("⬅️ Orqaga", callback_data="admin_main"))
     await c.message.edit_text(text, reply_markup=kb)
-
-@dp.callback_query_handler(text="admin_pays")
-async def admin_pays(c: types.CallbackQuery):
-    db.execute("SELECT * FROM payments WHERE status='pending'")
-    pays = db.fetchall()
-    text = "💰 **Kutilayotgan to'lovlar:**\n\n"
-    if not pays: text += "Hozircha yangi so'rovlar yo'q."
-    for p in pays:
-        text += f"ID: {p[0]} | User: {p[1]} | Summa: {p[2]} | Usul: {p[3]}\n"
-    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("⬅️ Orqaga", callback_data="admin_main"))
-    await c.message.edit_text(text, reply_markup=kb)
-
-@dp.callback_query_handler(text="close_admin")
-async def close_admin(c: types.CallbackQuery):
-    await c.message.delete()
 
 # --- ADMIN BUYRUQLARINI QABUL QILISH ---
 
@@ -123,21 +113,15 @@ async def admin_process(m: types.Message):
         val = m.text.replace("SET_CARD:", "").strip()
         db.execute("UPDATE settings SET value=? WHERE key='card'", (val,))
         conn.commit()
-        await m.answer(f"✅ Karta raqami yangilandi: `{val}`")
+        await m.answer(f"✅ Yangilandi: `{val}`")
     
-    elif m.text.startswith("SET_WALLET:"):
-        val = m.text.replace("SET_WALLET:", "").strip()
-        db.execute("UPDATE settings SET value=? WHERE key='wallet'", (val,))
-        conn.commit()
-        await m.answer(f"✅ Hamyon manzili yangilandi: `{val}`")
-
     elif m.text.startswith("AD:"):
         msg = m.text.replace("AD:", "").strip()
         db.execute("SELECT id FROM users")
         for user in db.fetchall():
             try: await bot.send_message(user[0], msg)
             except: pass
-        await m.answer("📢 Reklama barcha foydalanuvchilarga yuborildi!")
+        await m.answer("📢 AD yuborildi!")
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
