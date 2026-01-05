@@ -7,176 +7,204 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
     <style>
+        :root { --gold: #ffd700; --blue: #0088ff; }
         body {
-            margin: 0; padding: 0;
-            background: radial-gradient(circle at center, #0a1f3d 0%, #010816 100%);
-            color: white; font-family: 'Segoe UI', sans-serif;
-            height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center;
+            margin: 0; padding: 0; background: radial-gradient(circle at center, #0a1f3d 0%, #010816 100%);
+            color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden;
+            display: flex; flex-direction: column; align-items: center; user-select: none;
         }
-
         .bg-overlay {
-            position: absolute; width: 100%; height: 100%;
+            position: absolute; width: 100%; height: 100%; z-index: -1; opacity: 0.1;
             background-image: url('https://www.transparenttextures.com/patterns/circuit-board.png');
-            opacity: 0.1; z-index: -1;
         }
-
-        #ui-layer {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: flex; flex-direction: column; align-items: center;
-            pointer-events: none; z-index: 10;
-        }
-
-        .header { margin-top: 40px; text-align: center; pointer-events: auto; }
+        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; pointer-events: none; }
         
+        /* Pages */
+        .page { display: none; flex-direction: column; align-items: center; width: 100%; height: 80vh; padding-top: 40px; pointer-events: auto; }
+        .active-page { display: flex; }
+
+        /* Header & Balance */
+        .header { text-align: center; margin-bottom: 20px; }
         .balance-container {
-            background: rgba(0, 0, 0, 0.75);
-            padding: 12px 25px; border-radius: 25px;
-            border: 1px solid rgba(255, 215, 0, 0.5);
-            display: inline-flex; align-items: center; gap: 10px;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
+            background: rgba(0, 0, 0, 0.8); padding: 12px 25px; border-radius: 25px;
+            border: 1px solid rgba(255, 215, 0, 0.4); display: inline-flex; align-items: center; gap: 10px;
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
         }
-
         .balance-text { font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 1px; }
-        .currency { color: #ffd700; font-weight: 900; }
+        .currency { color: var(--gold); font-weight: 900; }
+        .slogan { color: var(--gold); font-size: 10px; margin-top: 10px; font-style: italic; text-transform: uppercase; opacity: 0.8; }
 
-        .slogan {
-            color: #ffd700; font-size: 10px; margin-top: 15px;
-            font-style: italic; opacity: 0.9; letter-spacing: 0.5px;
-            text-transform: uppercase;
-        }
-
-        canvas { display: block; outline: none; }
-
+        /* Button */
         .start-btn {
-            position: absolute; bottom: 120px;
-            background: linear-gradient(135deg, #0088ff 0%, #0055aa 100%);
-            color: white; border: none; padding: 18px 80px;
-            border-radius: 40px; font-size: 20px; font-weight: bold;
-            cursor: pointer; pointer-events: auto;
-            box-shadow: 0 10px 40px rgba(0, 136, 255, 0.4);
-            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            position: absolute; bottom: 120px; background: linear-gradient(135deg, var(--blue) 0%, #0055aa 100%);
+            color: white; border: none; padding: 18px 80px; border-radius: 40px; font-size: 20px;
+            font-weight: bold; cursor: pointer; box-shadow: 0 10px 40px rgba(0, 136, 255, 0.3); transition: 0.3s;
         }
 
-        .start-btn:active { transform: scale(0.95); }
+        /* Content Cards */
+        .content-card {
+            background: rgba(255, 255, 255, 0.05); width: 85%; padding: 25px; border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; margin-top: 20px; backdrop-filter: blur(10px);
+        }
 
+        /* Nav Footer */
         .nav-footer {
-            position: absolute; bottom: 30px; width: 90%;
-            display: flex; justify-content: space-around;
-            background: rgba(0, 0, 0, 0.85);
-            padding: 18px; border-radius: 30px;
-            backdrop-filter: blur(15px);
-            border: 1px solid rgba(255,215,0,0.2);
-            pointer-events: auto;
+            position: absolute; bottom: 30px; width: 90%; display: flex; justify-content: space-around;
+            background: rgba(0, 0, 0, 0.9); padding: 15px; border-radius: 30px;
+            border: 1px solid rgba(255,215,0,0.2); pointer-events: auto;
         }
+        .nav-icon { color: #888; font-size: 11px; text-align: center; cursor: pointer; opacity: 0.6; transition: 0.3s; }
+        .nav-icon.active { color: var(--blue); opacity: 1; transform: scale(1.1); font-weight: bold; }
         
-        .nav-icon { color: #888; font-size: 12px; text-align: center; cursor: pointer; }
-        .active { color: #0088ff; font-weight: bold; }
+        canvas { outline: none; position: absolute; top: 0; left: 0; transition: opacity 0.4s; }
+        h2 { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
     </style>
 </head>
 <body>
     <div class="bg-overlay"></div>
 
     <div id="ui-layer">
-        <div class="header">
-            <div class="balance-container">
-                <span class="balance-text" id="balance">0.00000000000000</span>
-                <span class="currency">RRZC</span>
+        <div id="mining-page" class="page active-page">
+            <div class="header">
+                <div class="balance-container">
+                    <span class="balance-text" id="balance">0.00000000000000</span>
+                    <span class="currency">RRZC</span>
+                </div>
+                <div class="slogan">RRuzcoin: Uncontrolled cash — the path to transparency</div>
             </div>
-            <div class="slogan">RRuzcoin: Uncontrolled cash — the path to transparency</div>
+            <button class="start-btn" id="mainBtn" onclick="toggleMining()">START MINING</button>
         </div>
 
-        <button class="start-btn" id="mainBtn" onclick="toggleMining()">START MINING</button>
+        <div id="wallet-page" class="page">
+            <h2>Hamyon</h2>
+            <div class="content-card">
+                <p style="color: #aaa;">Sizning hisobingiz</p>
+                <h1 id="wallet-balance" style="color: var(--gold); font-size: 32px; margin: 10px 0;">0.00</h1>
+                <p style="font-size: 12px; opacity: 0.7;">RRuzcoin Asset (RRZC)</p>
+                <button style="margin-top:20px; width: 100%; padding: 15px; border-radius: 15px; border:none; background: #222; color: #666;">CHIQARISH (TEZ ORADA)</button>
+            </div>
+        </div>
+
+        <div id="stats-page" class="page">
+            <h2>Statistika</h2>
+            <div class="content-card">
+                <div style="display:flex; justify-content: space-between; margin-bottom: 15px;">
+                    <span>Foydalanuvchilar:</span><span style="color: var(--blue);">1,240</span>
+                </div>
+                <div style="display:flex; justify-content: space-between; margin-bottom: 15px;">
+                    <span>Tarmoq kuchi:</span><span style="color: #00ff88;">4.2 TH/s</span>
+                </div>
+                <div style="display:flex; justify-content: space-between;">
+                    <span>Sirkulyatsiya:</span><span style="color: var(--gold);">850K RRZC</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="friends-page" class="page">
+            <h2>Do'stlar</h2>
+            <div class="content-card">
+                <div style="font-size: 40px; margin-bottom: 10px;">🎁</div>
+                <p>Do'stlarni taklif qiling va har biri uchun<br><b style="color: var(--gold);">+50 RRZC</b> oling!</p>
+                <button onclick="copyRef()" style="background: var(--blue); color: white; border:none; padding: 15px; border-radius: 15px; width: 100%; margin-top: 15px; font-weight: bold;">NUSXALASH</button>
+            </div>
+        </div>
 
         <div class="nav-footer">
-            <div class="nav-icon">💳<br>Wallet</div>
-            <div class="nav-icon active">⛏️<br>Mining</div>
-            <div class="nav-icon">📈<br>Stats</div>
-            <div class="nav-icon">👥<br>Friends</div>
+            <div class="nav-icon" id="btn-wallet" onclick="showPage('wallet-page', 'btn-wallet')">💳<br>Wallet</div>
+            <div class="nav-icon active" id="btn-mining" onclick="showPage('mining-page', 'btn-mining')">⛏️<br>Mining</div>
+            <div class="nav-icon" id="btn-stats" onclick="showPage('stats-page', 'btn-stats')">📈<br>Stats</div>
+            <div class="nav-icon" id="btn-friends" onclick="showPage('friends-page', 'btn-friends')">👥<br>Friends</div>
         </div>
     </div>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
-        tg.ready();
 
+        // 3D Engine Setup
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        
         renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
         document.body.appendChild(renderer.domElement);
 
-        // 1. Tanga Geometriyasi va Tekstura Yuklash
+        // Texture Loader
         const loader = new THREE.TextureLoader();
-        // Fayl nomini o'zingizning faylingizga moslang (masalan: logo.jpg)
-        const coinTexture = loader.load('IMG_20251231_141643_658.jpg');
+        const coinTexture = loader.load('IMG_20251231_141643_658.jpg'); // Logotipingiz
 
-        const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1.0, roughness: 0.3 });
-        const faceMaterial = new THREE.MeshStandardMaterial({ 
-            map: coinTexture, 
-            metalness: 0.9, 
-            roughness: 0.1 
-        });
-
-        // Cylinder materiallari: [yon, old, orqa]
-        const materials = [sideMaterial, faceMaterial, faceMaterial];
-        const geometry = new THREE.CylinderGeometry(2, 2, 0.25, 64);
-        const coin = new THREE.Mesh(geometry, materials);
-        
-        coin.rotation.x = Math.PI / 2; // Tikka turishi uchun
+        const materials = [
+            new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1.0, roughness: 0.3 }), // Yon tomoni
+            new THREE.MeshStandardMaterial({ map: coinTexture, metalness: 0.9, roughness: 0.1 }), // Oldi
+            new THREE.MeshStandardMaterial({ map: coinTexture, metalness: 0.9, roughness: 0.1 })  // Orqasi
+        ];
+        const coin = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.25, 64), materials);
+        coin.rotation.x = Math.PI / 2;
         scene.add(coin);
 
-        // 2. Yorug'lik (Tilla jilosi uchun)
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
-        const topLight = new THREE.DirectionalLight(0xffffff, 1.5);
-        topLight.position.set(5, 5, 5);
-        scene.add(topLight);
-
+        // Lighting
+        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
+        const light = new THREE.DirectionalLight(0xffffff, 1.2);
+        light.position.set(5, 5, 5);
+        scene.add(light);
         camera.position.z = 7;
 
-        // 3. Mining mantiqi
+        // Logic Variables
         let balance = parseFloat(localStorage.getItem('rrzc_balance')) || 0;
         let isMining = false;
         let rotationSpeed = 0.01;
-        const autoSpeed = 0.00000000000001;
-        const tapPower = 0.00000000000005;
 
-        const balanceEl = document.getElementById('balance');
-        const btn = document.getElementById('mainBtn');
-        balanceEl.innerText = balance.toFixed(14);
+        // Balance Initial Update
+        document.getElementById('balance').innerText = balance.toFixed(14);
+
+        function showPage(pageId, btnId) {
+            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
+            document.querySelectorAll('.nav-icon').forEach(i => i.classList.remove('active'));
+            document.getElementById(pageId).classList.add('active-page');
+            document.getElementById(btnId).classList.add('active');
+            
+            renderer.domElement.style.opacity = (pageId === 'mining-page') ? "1" : "0";
+            if(pageId === 'wallet-page') document.getElementById('wallet-balance').innerText = balance.toFixed(4);
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+        }
 
         function toggleMining() {
             isMining = !isMining;
+            const btn = document.getElementById('mainBtn');
             if (isMining) {
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
                 rotationSpeed = 0.08;
                 btn.innerText = 'STOP NODE';
                 btn.style.background = 'linear-gradient(135deg, #ff4400 0%, #cc3300 100%)';
+                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
             } else {
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
                 rotationSpeed = 0.01;
                 btn.innerText = 'START MINING';
-                btn.style.background = 'linear-gradient(135deg, #0088ff 0%, #0055aa 100%)';
+                btn.style.background = 'linear-gradient(135deg, var(--blue) 0%, #0055aa 100%)';
+                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
             }
         }
 
+        function copyRef() {
+            const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "founder";
+            const link = `https://t.me/rruzcoin_bot?start=${userId}`;
+            navigator.clipboard.writeText(link);
+            tg.showAlert("Havola nusxalandi!");
+        }
+
         renderer.domElement.addEventListener('pointerdown', () => {
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            balance += tapPower;
-            balanceEl.innerText = balance.toFixed(14);
-            coin.scale.set(0.92, 0.92, 0.92);
+            balance += 0.00000000000005;
+            document.getElementById('balance').innerText = balance.toFixed(14);
+            coin.scale.set(0.9, 0.9, 0.9);
             setTimeout(() => coin.scale.set(1, 1, 1), 80);
+            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
         });
 
         function animate() {
             requestAnimationFrame(animate);
-            coin.rotation.z += rotationSpeed; // Rasmdagi logotip o'z o'qi atrofida aylanadi
-
+            coin.rotation.z += rotationSpeed;
             if (isMining) {
-                balance += autoSpeed;
-                balanceEl.innerText = balance.toFixed(14);
+                balance += 0.00000000000001;
+                document.getElementById('balance').innerText = balance.toFixed(14);
                 localStorage.setItem('rrzc_balance', balance);
             }
             renderer.render(scene, camera);
