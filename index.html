@@ -2,17 +2,16 @@
 <html lang="uz">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>RRuzcoin: Elite 3D Node</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
     <style>
         body {
             margin: 0; padding: 0;
             background: radial-gradient(circle at center, #0a1f3d 0%, #010816 100%);
-            color: white; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            display: flex; flex-direction: column; align-items: center;
-            height: 100vh; overflow: hidden;
-            user-select: none;
+            color: white; font-family: 'Segoe UI', sans-serif;
+            height: 100vh; overflow: hidden; display: flex; flex-direction: column; align-items: center;
         }
 
         .bg-overlay {
@@ -21,89 +20,41 @@
             opacity: 0.1; z-index: -1;
         }
 
-        .header { margin-top: 40px; text-align: center; z-index: 1; }
+        #ui-layer {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; align-items: center;
+            pointer-events: none; z-index: 10;
+        }
+
+        .header { margin-top: 40px; text-align: center; pointer-events: auto; }
         
         .balance-container {
-            background: rgba(0, 0, 0, 0.7);
+            background: rgba(0, 0, 0, 0.75);
             padding: 12px 25px; border-radius: 25px;
             border: 1px solid rgba(255, 215, 0, 0.5);
             display: inline-flex; align-items: center; gap: 10px;
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.1);
+            box-shadow: 0 0 30px rgba(255, 215, 0, 0.15);
         }
 
-        .balance-text { 
-            font-size: 24px; font-weight: bold; 
-            font-family: 'Courier New', monospace; 
-            letter-spacing: 1px;
-        }
+        .balance-text { font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 1px; }
         .currency { color: #ffd700; font-weight: 900; }
 
         .slogan {
-            color: #ffd700; font-size: 11px; margin-top: 15px;
-            font-style: italic; opacity: 0.8; letter-spacing: 0.5px;
+            color: #ffd700; font-size: 10px; margin-top: 15px;
+            font-style: italic; opacity: 0.9; letter-spacing: 0.5px;
             text-transform: uppercase;
         }
 
-        /* 3D TANGA DINAMIKASI */
-        .coin-wrapper {
-            position: relative; margin: 50px 0;
-            perspective: 1000px;
-        }
-
-        .gold-coin {
-            width: 260px; height: 260px;
-            background: radial-gradient(circle at 35% 35%, #fff176, #ffd700 50%, #b8860b 90%);
-            border-radius: 50%;
-            border: 8px solid #ffdb4d;
-            box-shadow: 0 0 60px rgba(255, 215, 0, 0.4), inset -5px -5px 15px rgba(0,0,0,0.5);
-            display: flex; justify-content: center; align-items: center;
-            transform-style: preserve-3d;
-            animation: coin-rotate 5s linear infinite;
-            cursor: pointer;
-        }
-
-        /* "RR" MONOGRAMMA DIZAYNI */
-        .rr-logo {
-            font-size: 110px; font-weight: 900;
-            color: rgba(70, 50, 0, 0.9);
-            position: relative; font-family: 'Arial Black', sans-serif;
-            letter-spacing: -8px;
-            transform: translateZ(20px); /* 3D chuqurlik uchun */
-            text-shadow: 1px 1px 2px rgba(255,255,255,0.3);
-        }
-
-        /* Markaziy gorizontal chiziq */
-        .rr-logo::after {
-            content: ''; position: absolute;
-            width: 115%; height: 5px;
-            background: rgba(70, 50, 0, 0.8);
-            left: -7.5%; top: 52%;
-            box-shadow: 0 1px 2px rgba(255,255,255,0.2);
-        }
-
-        /* Pastki gorizontal chiziqchalar */
-        .rr-logo::before {
-            content: '≡≡≡'; 
-            position: absolute;
-            font-size: 45px;
-            bottom: -8px; left: 15px;
-            letter-spacing: 3px;
-            opacity: 0.7;
-        }
-
-        @keyframes coin-rotate {
-            0% { transform: rotateY(0deg); }
-            100% { transform: rotateY(360deg); }
-        }
+        canvas { display: block; outline: none; }
 
         .start-btn {
+            position: absolute; bottom: 120px;
             background: linear-gradient(135deg, #0088ff 0%, #0055aa 100%);
-            color: white; border: none;
-            padding: 18px 90px; border-radius: 40px;
-            font-size: 22px; font-weight: bold;
-            cursor: pointer; box-shadow: 0 10px 40px rgba(0, 136, 255, 0.4);
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 10;
+            color: white; border: none; padding: 18px 80px;
+            border-radius: 40px; font-size: 20px; font-weight: bold;
+            cursor: pointer; pointer-events: auto;
+            box-shadow: 0 10px 40px rgba(0, 136, 255, 0.4);
+            transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
 
         .start-btn:active { transform: scale(0.95); }
@@ -115,91 +66,128 @@
             padding: 18px; border-radius: 30px;
             backdrop-filter: blur(15px);
             border: 1px solid rgba(255,215,0,0.2);
+            pointer-events: auto;
         }
         
-        .nav-icon { color: #888; font-size: 14px; text-align: center; transition: 0.3s; cursor: pointer; }
-        .nav-icon:hover { color: #ffd700; }
-        .active { color: #0088ff; font-weight: bold; text-shadow: 0 0 10px rgba(0, 136, 255, 0.5); }
+        .nav-icon { color: #888; font-size: 12px; text-align: center; cursor: pointer; }
+        .active { color: #0088ff; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="bg-overlay"></div>
 
-    <div class="header">
-        <div class="balance-container">
-            <span class="balance-text" id="balance">0.00000000000000</span>
-            <span class="currency">RRZC</span>
+    <div id="ui-layer">
+        <div class="header">
+            <div class="balance-container">
+                <span class="balance-text" id="balance">0.00000000000000</span>
+                <span class="currency">RRZC</span>
+            </div>
+            <div class="slogan">RRuzcoin: Uncontrolled cash — the path to transparency</div>
         </div>
-        <div class="slogan">RRuzcoin: Uncontrolled cash — the path to transparency</div>
-    </div>
 
-    <div class="coin-wrapper">
-        <div class="gold-coin" id="coin" onclick="manualTap()">
-            <div class="rr-logo">RR</div>
+        <button class="start-btn" id="mainBtn" onclick="toggleMining()">START MINING</button>
+
+        <div class="nav-footer">
+            <div class="nav-icon">💳<br>Wallet</div>
+            <div class="nav-icon active">⛏️<br>Mining</div>
+            <div class="nav-icon">📈<br>Stats</div>
+            <div class="nav-icon">👥<br>Friends</div>
         </div>
-    </div>
-
-    <button class="start-btn" id="mainBtn" onclick="toggleMining()">START MINING</button>
-
-    <div class="nav-footer">
-        <div class="nav-icon">💳<br>Wallet</div>
-        <div class="nav-icon active">⛏️<br>Mining</div>
-        <div class="nav-icon">📈<br>Stats</div>
-        <div class="nav-icon">👥<br>Friends</div>
     </div>
 
     <script>
-        // Telegram WebApp sozlamalari
         const tg = window.Telegram.WebApp;
         tg.expand();
         tg.ready();
 
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // 1. Tanga Geometriyasi va Tekstura Yuklash
+        const loader = new THREE.TextureLoader();
+        // Fayl nomini o'zingizning faylingizga moslang (masalan: logo.jpg)
+        const coinTexture = loader.load('1000051276.jpg');
+
+        const sideMaterial = new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1.0, roughness: 0.3 });
+        const faceMaterial = new THREE.MeshStandardMaterial({ 
+            map: coinTexture, 
+            metalness: 0.9, 
+            roughness: 0.1 
+        });
+
+        // Cylinder materiallari: [yon, old, orqa]
+        const materials = [sideMaterial, faceMaterial, faceMaterial];
+        const geometry = new THREE.CylinderGeometry(2, 2, 0.25, 64);
+        const coin = new THREE.Mesh(geometry, materials);
+        
+        coin.rotation.x = Math.PI / 2; // Tikka turishi uchun
+        scene.add(coin);
+
+        // 2. Yorug'lik (Tilla jilosi uchun)
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+        const topLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        topLight.position.set(5, 5, 5);
+        scene.add(topLight);
+
+        camera.position.z = 7;
+
+        // 3. Mining mantiqi
         let balance = parseFloat(localStorage.getItem('rrzc_balance')) || 0;
-        const autoSpeed = 0.00000000000001; 
-        const tapPower = 0.00000000000005;
         let isMining = false;
-        let miningInterval;
+        let rotationSpeed = 0.01;
+        const autoSpeed = 0.00000000000001;
+        const tapPower = 0.00000000000005;
 
         const balanceEl = document.getElementById('balance');
         const btn = document.getElementById('mainBtn');
-        const coin = document.getElementById('coin');
-
         balanceEl.innerText = balance.toFixed(14);
-
-        function updateBalance(amount) {
-            balance += amount;
-            balanceEl.innerText = balance.toFixed(14);
-            localStorage.setItem('rrzc_balance', balance);
-        }
 
         function toggleMining() {
             isMining = !isMining;
             if (isMining) {
-                // Mining boshlandi
                 if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
+                rotationSpeed = 0.08;
                 btn.innerText = 'STOP NODE';
                 btn.style.background = 'linear-gradient(135deg, #ff4400 0%, #cc3300 100%)';
-                coin.style.animationDuration = '1s'; 
-                miningInterval = setInterval(() => updateBalance(autoSpeed), 1000);
             } else {
-                // Mining to'xtadi
                 if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+                rotationSpeed = 0.01;
                 btn.innerText = 'START MINING';
                 btn.style.background = 'linear-gradient(135deg, #0088ff 0%, #0055aa 100%)';
-                coin.style.animationDuration = '5s';
-                clearInterval(miningInterval);
             }
         }
 
-        function manualTap() {
-            // Tanga ustiga bosilganda kichik bonus va vibratsiya
+        renderer.domElement.addEventListener('pointerdown', () => {
             if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-            updateBalance(tapPower);
-            
-            // Bosish effekti (visual scale)
-            coin.style.transform = 'scale(0.98)';
-            setTimeout(() => coin.style.transform = 'scale(1)', 100);
+            balance += tapPower;
+            balanceEl.innerText = balance.toFixed(14);
+            coin.scale.set(0.92, 0.92, 0.92);
+            setTimeout(() => coin.scale.set(1, 1, 1), 80);
+        });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            coin.rotation.z += rotationSpeed; // Rasmdagi logotip o'z o'qi atrofida aylanadi
+
+            if (isMining) {
+                balance += autoSpeed;
+                balanceEl.innerText = balance.toFixed(14);
+                localStorage.setItem('rrzc_balance', balance);
+            }
+            renderer.render(scene, camera);
         }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
     </script>
 </body>
 </html>
