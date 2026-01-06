@@ -1,221 +1,159 @@
 <!DOCTYPE html>
-<html lang="uz">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>RRuzcoin: Elite 3D Node</title>
+    <title>RRuzcoin Mining Terminal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r150/three.min.js"></script>
     <style>
-        :root { --gold: #ffd700; --blue: #0088ff; }
-        body {
-            margin: 0; padding: 0; background: radial-gradient(circle at center, #0a1f3d 0%, #010816 100%);
-            color: white; font-family: 'Segoe UI', sans-serif; height: 100vh; overflow: hidden;
-            display: flex; flex-direction: column; align-items: center; user-select: none;
-        }
-        .bg-overlay {
-            position: absolute; width: 100%; height: 100%; z-index: -1; opacity: 0.1;
-            background-image: url('https://www.transparenttextures.com/patterns/circuit-board.png');
-        }
-        #ui-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; pointer-events: none; }
+        :root { --gold: #ffd60a; --dark: #000814; --neon: #003566; }
+        body { margin: 0; background: var(--dark); color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; touch-action: none; }
         
-        /* Pages */
-        .page { display: none; flex-direction: column; align-items: center; width: 100%; height: 80vh; padding-top: 40px; pointer-events: auto; }
-        .active-page { display: flex; }
-
-        /* Header & Balance */
-        .header { text-align: center; margin-bottom: 20px; }
-        .balance-container {
-            background: rgba(0, 0, 0, 0.8); padding: 12px 25px; border-radius: 25px;
-            border: 1px solid rgba(255, 215, 0, 0.4); display: inline-flex; align-items: center; gap: 10px;
-            box-shadow: 0 0 30px rgba(255, 215, 0, 0.1);
+        /* Yuqori Panel */
+        #ui { position: absolute; width: 100%; top: 20px; text-align: center; z-index: 10; }
+        .glass-card { 
+            background: rgba(0, 53, 102, 0.2); backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 214, 10, 0.3); border-radius: 20px;
+            padding: 15px; display: inline-block; min-width: 80%;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
         }
-        .balance-text { font-size: 24px; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 1px; }
-        .currency { color: var(--gold); font-weight: 900; }
-        .slogan { color: var(--gold); font-size: 10px; margin-top: 10px; font-style: italic; text-transform: uppercase; opacity: 0.8; }
+        #balance { font-size: 32px; font-weight: 900; color: var(--gold); text-shadow: 0 0 15px rgba(255, 214, 10, 0.6); font-family: monospace; }
+        .label { font-size: 10px; letter-spacing: 3px; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; margin-top: 5px; }
 
-        /* Button */
-        .start-btn {
-            position: absolute; bottom: 120px; background: linear-gradient(135deg, var(--blue) 0%, #0055aa 100%);
-            color: white; border: none; padding: 18px 80px; border-radius: 40px; font-size: 20px;
-            font-weight: bold; cursor: pointer; box-shadow: 0 10px 40px rgba(0, 136, 255, 0.3); transition: 0.3s;
-        }
+        /* Mining Stats */
+        .stats-overlay { position: absolute; top: 120px; left: 20px; font-size: 12px; color: var(--gold); font-family: monospace; z-index: 5; }
 
-        /* Content Cards */
-        .content-card {
-            background: rgba(255, 255, 255, 0.05); width: 85%; padding: 25px; border-radius: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1); text-align: center; margin-top: 20px; backdrop-filter: blur(10px);
-        }
+        /* Progress Bar */
+        .progress-container { position: absolute; bottom: 140px; width: 80%; left: 10%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
+        #progress-bar { width: 0%; height: 100%; background: var(--gold); box-shadow: 0 0 10px var(--gold); transition: 0.1s; }
 
-        /* Nav Footer */
-        .nav-footer {
-            position: absolute; bottom: 30px; width: 90%; display: flex; justify-content: space-around;
-            background: rgba(0, 0, 0, 0.9); padding: 15px; border-radius: 30px;
-            border: 1px solid rgba(255,215,0,0.2); pointer-events: auto;
+        /* Asosiy Tugma */
+        #mining-btn { 
+            position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
+            width: 80%; padding: 20px; font-size: 18px; font-weight: bold;
+            background: linear-gradient(45deg, #ffd60a, #ffc300); color: black;
+            border: none; border-radius: 15px; cursor: pointer;
+            box-shadow: 0 0 30px rgba(255, 214, 10, 0.3); transition: 0.3s;
+            text-transform: uppercase; letter-spacing: 2px;
         }
-        .nav-icon { color: #888; font-size: 11px; text-align: center; cursor: pointer; opacity: 0.6; transition: 0.3s; }
-        .nav-icon.active { color: var(--blue); opacity: 1; transform: scale(1.1); font-weight: bold; }
+        #mining-btn.active { background: #ff4d4d; color: white; box-shadow: 0 0 30px rgba(255, 77, 77, 0.4); }
         
-        canvas { outline: none; position: absolute; top: 0; left: 0; transition: opacity 0.4s; }
-        h2 { color: var(--gold); text-transform: uppercase; letter-spacing: 2px; }
+        /* Neon Chiziqlar */
+        .scanline { width: 100%; height: 100px; background: linear-gradient(0deg, transparent, rgba(255, 214, 10, 0.05), transparent); position: absolute; top: -100px; animation: scan 4s linear infinite; pointer-events: none; }
+        @keyframes scan { 0% { top: -100px; } 100% { top: 100%; } }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div class="bg-overlay"></div>
-
-    <div id="ui-layer">
-        <div id="mining-page" class="page active-page">
-            <div class="header">
-                <div class="balance-container">
-                    <span class="balance-text" id="balance">0.00000000000000</span>
-                    <span class="currency">RRZC</span>
-                </div>
-                <div class="slogan">RRuzcoin: Uncontrolled cash — the path to transparency</div>
-            </div>
-            <button class="start-btn" id="mainBtn" onclick="toggleMining()">START MINING</button>
-        </div>
-
-        <div id="wallet-page" class="page">
-            <h2>Hamyon</h2>
-            <div class="content-card">
-                <p style="color: #aaa;">Sizning hisobingiz</p>
-                <h1 id="wallet-balance" style="color: var(--gold); font-size: 32px; margin: 10px 0;">0.00</h1>
-                <p style="font-size: 12px; opacity: 0.7;">RRuzcoin Asset (RRZC)</p>
-                <button style="margin-top:20px; width: 100%; padding: 15px; border-radius: 15px; border:none; background: #222; color: #666;">CHIQARISH (TEZ ORADA)</button>
-            </div>
-        </div>
-
-        <div id="stats-page" class="page">
-            <h2>Statistika</h2>
-            <div class="content-card">
-                <div style="display:flex; justify-content: space-between; margin-bottom: 15px;">
-                    <span>Foydalanuvchilar:</span><span style="color: var(--blue);">1,240</span>
-                </div>
-                <div style="display:flex; justify-content: space-between; margin-bottom: 15px;">
-                    <span>Tarmoq kuchi:</span><span style="color: #00ff88;">4.2 TH/s</span>
-                </div>
-                <div style="display:flex; justify-content: space-between;">
-                    <span>Sirkulyatsiya:</span><span style="color: var(--gold);">850K RRZC</span>
-                </div>
-            </div>
-        </div>
-
-        <div id="friends-page" class="page">
-            <h2>Do'stlar</h2>
-            <div class="content-card">
-                <div style="font-size: 40px; margin-bottom: 10px;">🎁</div>
-                <p>Do'stlarni taklif qiling va har biri uchun<br><b style="color: var(--gold);">+50 RRZC</b> oling!</p>
-                <button onclick="copyRef()" style="background: var(--blue); color: white; border:none; padding: 15px; border-radius: 15px; width: 100%; margin-top: 15px; font-weight: bold;">NUSXALASH</button>
-            </div>
-        </div>
-
-        <div class="nav-footer">
-            <div class="nav-icon" id="btn-wallet" onclick="showPage('wallet-page', 'btn-wallet')">💳<br>Wallet</div>
-            <div class="nav-icon active" id="btn-mining" onclick="showPage('mining-page', 'btn-mining')">⛏️<br>Mining</div>
-            <div class="nav-icon" id="btn-stats" onclick="showPage('stats-page', 'btn-stats')">📈<br>Stats</div>
-            <div class="nav-icon" id="btn-friends" onclick="showPage('friends-page', 'btn-friends')">👥<br>Friends</div>
+    <div class="scanline"></div>
+    <div id="ui">
+        <div class="glass-card">
+            <div id="balance">0.0000000000</div>
+            <div class="label">RRuzcoin Network Balance</div>
         </div>
     </div>
+
+    <div class="stats-overlay">
+        <div>STATUS: <span id="node-status">STANDBY</span></div>
+        <div>SPEED: <span id="node-speed">0.0000000001</span>/s</div>
+        <div>STRENGTH: 98.4%</div>
+    </div>
+
+    <div class="progress-container"><div id="progress-bar"></div></div>
+    
+    <button id="mining-btn">Initiate Mining</button>
 
     <script>
         const tg = window.Telegram.WebApp;
         tg.expand();
+        tg.enableClosingConfirmation();
+        tg.headerColor = '#000814';
 
-        // 3D Engine Setup
+        let balance = parseFloat(localStorage.getItem('rruz_balance')) || 0;
+        let speed = 0.0000000001;
+        let isMining = false;
+        let miningInterval;
+        let progress = 0;
+
+        const balEl = document.getElementById('balance');
+        const progEl = document.getElementById('progress-bar');
+        const statusEl = document.getElementById('node-status');
+        balEl.innerText = balance.toFixed(10);
+
+        // Three.js Scene
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-        renderer.setPixelRatio(window.devicePixelRatio);
         renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
         document.body.appendChild(renderer.domElement);
 
-        // Texture Loader
         const loader = new THREE.TextureLoader();
-        const coinTexture = loader.load('IMG_20251231_141643_658.jpg'); // Logotipingiz
-
-        const materials = [
-            new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1.0, roughness: 0.3 }), // Yon tomoni
-            new THREE.MeshStandardMaterial({ map: coinTexture, metalness: 0.9, roughness: 0.1 }), // Oldi
-            new THREE.MeshStandardMaterial({ map: coinTexture, metalness: 0.9, roughness: 0.1 })  // Orqasi
-        ];
-        const coin = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 0.25, 64), materials);
-        coin.rotation.x = Math.PI / 2;
-        scene.add(coin);
-
-        // Lighting
-        scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-        const light = new THREE.DirectionalLight(0xffffff, 1.2);
-        light.position.set(5, 5, 5);
-        scene.add(light);
-        camera.position.z = 7;
-
-        // Logic Variables
-        let balance = parseFloat(localStorage.getItem('rrzc_balance')) || 0;
-        let isMining = false;
-        let rotationSpeed = 0.01;
-
-        // Balance Initial Update
-        document.getElementById('balance').innerText = balance.toFixed(14);
-
-        function showPage(pageId, btnId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active-page'));
-            document.querySelectorAll('.nav-icon').forEach(i => i.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active-page');
-            document.getElementById(btnId).classList.add('active');
+        loader.load('https://raw.githubusercontent.com/rruzcoin/rruzcoin/main/IMG_20251231_141643_658.jpg', (texture) => {
+            const materials = [
+                new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 1, roughness: 0.2 }),
+                new THREE.MeshStandardMaterial({ map: texture, metalness: 0.8, roughness: 0.1 }),
+                new THREE.MeshStandardMaterial({ map: texture, metalness: 0.8, roughness: 0.1 })
+            ];
+            const coin = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.4, 80), materials);
+            coin.rotation.x = Math.PI / 2;
+            scene.add(coin);
             
-            renderer.domElement.style.opacity = (pageId === 'mining-page') ? "1" : "0";
-            if(pageId === 'wallet-page') document.getElementById('wallet-balance').innerText = balance.toFixed(4);
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-        }
+            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            const pLight = new THREE.PointLight(0xffd60a, 1.5, 10);
+            pLight.position.set(5, 5, 5);
+            scene.add(pLight);
 
-        function toggleMining() {
-            isMining = !isMining;
-            const btn = document.getElementById('mainBtn');
-            if (isMining) {
-                rotationSpeed = 0.08;
-                btn.innerText = 'STOP NODE';
-                btn.style.background = 'linear-gradient(135deg, #ff4400 0%, #cc3300 100%)';
-                if (tg.HapticFeedback) tg.HapticFeedback.notificationOccurred('success');
-            } else {
-                rotationSpeed = 0.01;
-                btn.innerText = 'START MINING';
-                btn.style.background = 'linear-gradient(135deg, var(--blue) 0%, #0055aa 100%)';
-                if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('medium');
+            function animate() {
+                requestAnimationFrame(animate);
+                if(isMining) {
+                    coin.rotation.z += 0.06;
+                    coin.position.y = Math.sin(Date.now() * 0.002) * 0.1; // Suzish effekti
+                }
+                renderer.render(scene, camera);
             }
-        }
-
-        function copyRef() {
-            const userId = tg.initDataUnsafe.user ? tg.initDataUnsafe.user.id : "founder";
-            const link = `https://t.me/rruzcoin_bot?start=${userId}`;
-            navigator.clipboard.writeText(link);
-            tg.showAlert("Havola nusxalandi!");
-        }
-
-        renderer.domElement.addEventListener('pointerdown', () => {
-            balance += 0.00000000000005;
-            document.getElementById('balance').innerText = balance.toFixed(14);
-            coin.scale.set(0.9, 0.9, 0.9);
-            setTimeout(() => coin.scale.set(1, 1, 1), 80);
-            if (tg.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
+            animate();
         });
 
-        function animate() {
-            requestAnimationFrame(animate);
-            coin.rotation.z += rotationSpeed;
-            if (isMining) {
-                balance += 0.00000000000001;
-                document.getElementById('balance').innerText = balance.toFixed(14);
-                localStorage.setItem('rrzc_balance', balance);
-            }
-            renderer.render(scene, camera);
-        }
-        animate();
+        camera.position.z = 8;
 
         window.addEventListener('resize', () => {
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
         });
+
+        const btn = document.getElementById('mining-btn');
+        btn.onclick = () => {
+            if(!isMining) {
+                isMining = true;
+                btn.innerText = "Terminate & Sync";
+                btn.classList.add('active');
+                statusEl.innerText = "ACTIVE";
+                statusEl.style.color = "#00ff00";
+                tg.HapticFeedback.impactOccurred('heavy');
+                
+                miningInterval = setInterval(() => {
+                    balance += speed;
+                    balEl.innerText = balance.toFixed(10);
+                    
+                    progress = (progress + 1) % 100;
+                    progEl.style.width = progress + "%";
+                }, 100);
+            } else {
+                isMining = false;
+                btn.innerText = "Initiate Mining";
+                btn.classList.remove('active');
+                statusEl.innerText = "STANDBY";
+                statusEl.style.color = "#ffd60a";
+                clearInterval(miningInterval);
+                
+                // Botga yuborish
+                tg.sendData(JSON.stringify({new_balance: balance}));
+                localStorage.setItem('rruz_balance', balance);
+            }
+        };
     </script>
 </body>
 </html>
