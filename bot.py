@@ -8,12 +8,17 @@ from aiogram.types import WebAppInfo, InlineKeyboardMarkup, InlineKeyboardButton
 API_TOKEN = '8550803046:AAHWhHvREEzYQV_Gi-9pyT5eX_xD7MKrpUA'
 ADMIN_ID = 1424175786 
 WEB_APP_URL = "https://rruzcoin.github.io/rruzcoin/" 
-REF_BONUS = 0.0000100000  # Siz belgilagan mukofot miqdori
+REF_BONUS = 0.0000100000 
 SLOGAN = "RRuzcoin: Uncontrolled cash — the path to transparency"
 BRAND_COIN_URL = "https://raw.githubusercontent.com/rruzcoin/rruzcoin/main/IMG_20251231_141643_658.jpg"
 
+# PythonAnywhere bepul tarifi uchun Proxy sozlamasi
+PROXY_URL = "http://proxy.server:3128"
+
 logging.basicConfig(level=logging.INFO)
-bot = Bot(token=API_TOKEN, parse_mode="Markdown")
+
+# Botni Proxy bilan ishga tushirish
+bot = Bot(token=API_TOKEN, parse_mode="Markdown", proxy=PROXY_URL)
 dp = Dispatcher(bot)
 
 # --- BAZA BILAN ISHLASH ---
@@ -26,7 +31,6 @@ def db_manage(query, params=(), fetchone=False, commit=False):
         return cursor.fetchall()
 
 def init_db():
-    # Referrer_id ustuni kim taklif qilganini saqlash uchun
     db_manage('''CREATE TABLE IF NOT EXISTS users 
         (id INTEGER PRIMARY KEY, b REAL DEFAULT 0, speed REAL DEFAULT 0.0000000001, referrer_id INTEGER)''', commit=True)
 init_db()
@@ -45,10 +49,8 @@ def main_menu(uid):
 @dp.message_handler(commands=['start'])
 async def start_command(m: types.Message):
     user_id = m.from_user.id
-    # Link orqali kelgan referrer ID sini tekshirish (/start 123456)
     args = m.get_args()
     
-    # Yangi foydalanuvchimi?
     is_new = db_manage("SELECT id FROM users WHERE id = ?", (user_id,), fetchone=True) is None
     
     if is_new:
@@ -75,8 +77,6 @@ async def start_command(m: types.Message):
 async def show_friends(c: types.CallbackQuery):
     bot_info = await bot.get_me()
     ref_link = f"https://t.me/{bot_info.username}?start={c.from_user.id}"
-    
-    # Taklif qilingan do'stlar soni
     invited_count = db_manage("SELECT COUNT(*) FROM users WHERE referrer_id = ?", (c.from_user.id,), fetchone=True)[0]
     
     text = (f"👥 **DO'STLAR**\n\n"
@@ -84,8 +84,7 @@ async def show_friends(c: types.CallbackQuery):
             f"Siz taklif qilganlar: `{invited_count}` ta\n\n"
             f"Sizning havolangiz:\n`{ref_link}`")
     
-    kb = InlineKeyboardMarkup().add(InlineKeyboardButton("NUSXALASH", switch_inline_query=ref_link))
-    await bot.send_message(c.from_user.id, text, reply_markup=kb)
+    await bot.send_message(c.from_user.id, text)
 
 # --- REAL STATISTIKA ---
 @dp.callback_query_handler(lambda c: c.data == "network_stats")
@@ -103,12 +102,16 @@ async def show_stats(c: types.CallbackQuery):
     await bot.answer_callback_query(c.id)
     await bot.send_message(c.from_user.id, text)
 
+# WebApp dan ma'lumot qabul qilish
 @dp.message_handler(content_types=['web_app_data'])
 async def handle_webapp_data(m: types.Message):
-    data = json.loads(m.web_app_data.data)
-    new_balance = float(data.get('new_balance', 0))
-    db_manage("UPDATE users SET b = ? WHERE id = ?", (new_balance, m.from_user.id), commit=True)
-    await m.answer(f"✅ Balans saqlandi: `{new_balance:.10f}`")
+    try:
+        data = json.loads(m.web_app_data.data)
+        new_balance = float(data.get('new_balance', 0))
+        db_manage("UPDATE users SET b = ? WHERE id = ?", (new_balance, m.from_user.id), commit=True)
+        await m.answer(f"✅ Balans saqlandi: `{new_balance:.10f}`")
+    except:
+        await m.answer("❌ Sinxronizatsiyada xato.")
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
