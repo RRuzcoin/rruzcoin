@@ -11,7 +11,6 @@
         :root { --gold: #ffd60a; --dark: #000814; --neon: #003566; --red: #ff4d4d; }
         body { margin: 0; background: var(--dark); color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; touch-action: none; -webkit-user-select: none; }
         
-        /* UI Layout */
         #ui { position: absolute; width: 100%; top: 20px; text-align: center; z-index: 10; }
         .glass-card { 
             background: rgba(0, 53, 102, 0.2); backdrop-filter: blur(15px);
@@ -27,7 +26,6 @@
         .progress-container { position: absolute; bottom: 155px; width: 84%; left: 8%; height: 6px; background: rgba(255,255,255,0.05); border-radius: 3px; overflow: hidden; z-index: 5; border: 1px solid rgba(255,214,10,0.1); }
         #progress-bar { width: 0%; height: 100%; background: linear-gradient(90deg, transparent, var(--gold)); box-shadow: 0 0 15px var(--gold); transition: 2s linear; }
 
-        /* Modals */
         .modal {
             position: fixed; bottom: -100%; left: 0; width: 100%; height: 75%;
             background: rgba(0, 8, 20, 0.98); border-top: 2px solid var(--gold);
@@ -45,7 +43,6 @@
         }
         .action-btn { background: var(--gold); color: black; border: none; padding: 10px 20px; border-radius: 8px; font-weight: bold; font-family: 'Orbitron'; font-size: 11px; }
 
-        /* Controls */
         .controls { position: absolute; bottom: 30px; width: 90%; left: 5%; display: flex; flex-direction: column; gap: 10px; z-index: 10; }
         #mining-btn { 
             width: 100%; padding: 22px; font-size: 18px; font-weight: 900;
@@ -113,9 +110,9 @@
         tg.headerColor = '#000814';
         tg.backgroundColor = '#000814';
 
-        // 1. DATA INITIALIZATION (LOCALSTORAGE INTEGRATION)
+        // 1. DATA INITIALIZATION
         let savedBalance = parseFloat(localStorage.getItem('rruz_bal')) || 0;
-        let sessionMined = savedBalance; 
+        let totalBalance = savedBalance; 
         let speed = 0.0000000001; 
         let isMining = false;
         let miningInterval;
@@ -126,8 +123,7 @@
         const progEl = document.getElementById('progress-bar');
         const statusEl = document.getElementById('node-status');
 
-        // Boshlang'ich balansni yuklash
-        balEl.innerText = sessionMined.toFixed(10);
+        balEl.innerText = totalBalance.toFixed(10);
 
         function openModal(id) {
             closeModals();
@@ -150,7 +146,7 @@
             tg.HapticFeedback.selectionChanged();
         }
 
-        // 2. 3D SCENE (TEXTURE FIXED)
+        // 2. 3D SCENE (TEXTURE & LIGHTING FIXED)
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -160,24 +156,34 @@
 
         const loader = new THREE.TextureLoader();
         loader.load('https://raw.githubusercontent.com/rruzcoin/rruzcoin/main/IMG_20251231_141643_658.jpg', (texture) => {
-            
-            // HARFLARNI TIKLASH: Rasmni 90 darajaga buramiz
             texture.center.set(0.5, 0.5);
-            texture.rotation = Math.PI / 2; 
+            texture.rotation = Math.PI / 2; // Harflar tiklandi
 
             const materials = [
-                new THREE.MeshStandardMaterial({ color: 0xd4af37, metalness: 0.9, roughness: 0.1 }),
+                // Tanganing qirrasi (Side) - Qoraymasligi uchun emissive qo'shildi
+                new THREE.MeshStandardMaterial({ 
+                    color: 0xd4af37, 
+                    metalness: 1.0, 
+                    roughness: 0.1,
+                    emissive: 0x332200 // Oltin tusdagi nur
+                }),
                 new THREE.MeshStandardMaterial({ map: texture, metalness: 0.6, roughness: 0.2 }),
                 new THREE.MeshStandardMaterial({ map: texture, metalness: 0.6, roughness: 0.2 })
             ];
+
             const coin = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.4, 80), materials);
-            coin.rotation.set(1.57, 0, 0); // Tangani tik holatga keltirish
+            coin.rotation.set(1.57, 0, 0);
             scene.add(coin);
             
-            scene.add(new THREE.AmbientLight(0xffffff, 1.0));
-            const pLight = new THREE.PointLight(0xffd60a, 2.5, 20);
-            pLight.position.set(5, 5, 10);
-            scene.add(pLight);
+            scene.add(new THREE.AmbientLight(0xffffff, 1.4)); // Yorug'lik kuchaytirildi
+            
+            const pLight1 = new THREE.PointLight(0xffd60a, 2, 20);
+            pLight1.position.set(5, 3, 8);
+            scene.add(pLight1);
+
+            const pLight2 = new THREE.PointLight(0xffffff, 1.5, 20);
+            pLight2.position.set(-5, -3, 5);
+            scene.add(pLight2);
 
             function animate() {
                 requestAnimationFrame(animate);
@@ -191,7 +197,7 @@
         });
         camera.position.z = 8;
 
-        // 3. MINING LOGIC (STABLE 2s RHYTHM + STORAGE)
+        // 3. MINING LOGIC
         btn.onclick = () => {
             if(!isMining) {
                 isMining = true;
@@ -202,13 +208,11 @@
                 tg.HapticFeedback.notificationOccurred('success');
                 
                 miningInterval = setInterval(() => {
-                    sessionMined += speed; 
-                    balEl.innerText = sessionMined.toFixed(10);
+                    totalBalance += speed; 
+                    balEl.innerText = totalBalance.toFixed(10);
                     
-                    // Saqlash
-                    localStorage.setItem('rruz_bal', sessionMined);
+                    localStorage.setItem('rruz_bal', totalBalance);
                     
-                    // Progress bar animatsiyasi
                     progress = (progress + 20) % 120;
                     progEl.style.width = (progress > 100 ? 100 : progress) + "%";
                     if(progress >= 100) progress = 0;
@@ -224,10 +228,9 @@
                 clearInterval(miningInterval);
                 progEl.style.width = "0%";
                 
-                // Telegram Botga yakuniy balansni yuborish
-                tg.sendData(JSON.stringify({ mined: sessionMined }));
+                tg.sendData(JSON.stringify({ mined: totalBalance }));
                 tg.HapticFeedback.notificationOccurred('warning');
-                setTimeout(() => { tg.close(); }, 800);
+                setTimeout(() => { tg.close(); }, 1000);
             }
         };
 
