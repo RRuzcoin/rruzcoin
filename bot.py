@@ -13,6 +13,9 @@ REF_BONUS = 0.0000100000
 BRAND_IMG = "https://raw.githubusercontent.com/rruzcoin/rruzcoin/main/IMG_20251231_141643_658.jpg"
 SUPPORT_USER = "@RRuzcoin_Admin"
 
+# PythonAnywhere bepul tarifi uchun proxy (Network Unreachable xatosini oldini oladi)
+PROXY_URL = "http://proxy.server:3128"
+
 # --- 2. 22 TA TIL LUG'ATI ---
 LANGS = {
     'uz': {'start': "💎 RRuzcoin: Uncontrolled cash — the path to transparency.\n\nNode: Faol ✅", 'mining': "⛏ Mining", 'wallet': "💳 Hamyon", 'dep': "🚀 Tezlik", 'stats': "📊 Statistika", 'card_msg': "💳 To'lov: `{}`"},
@@ -26,10 +29,10 @@ LANGS = {
     'kr': {'start': "💎 RRuzcoin: 노드 상태: 활성 ✅", 'mining': "⛏ 마이닝", 'wallet': "💳 지갑", 'dep': "🚀 속도", 'stats': "📊 통계", 'card_msg': "💳 카드: `{}`"},
     'jp': {'start': "💎 RRuzcoin: ノードの状態: アクティブ ✅", 'mining': "⛏ マイニング", 'wallet': "💳 ウォレット", 'dep': "🚀 速度", 'stats': "📊 統計", 'card_msg': "💳 カード: `{}`"},
     'kz': {'start': "💎 RRuzcoin: Node статусы: Белсенді ✅", 'mining': "⛏ Майнинг", 'wallet': "💳 Әмиян", 'dep': "🚀 Жылдамдық", 'stats': "📊 Статистика", 'card_msg': "💳 Карта: `{}`"},
-    'kg': {'start': "💎 RRuzcoin: Node статусу: Активдүү ✅", 'mining': "⛏ Майнинг", 'wallet': "💳 Капчык", 'dep': "🚀 Ылдамдык", 'stats': "📊 Статистика", 'card_msg': "💳 Карта: `{}`"},
-    'tj': {'start': "💎 RRuzcoin: Ҳолати Node: Фаъол ✅", 'mining': "⛏ Майнинг", 'wallet': "💳 ҳамён", 'dep': "🚀 Суръат", 'stats': "📊 Омор", 'card_msg': "💳 Корт: `{}`"},
+    'kg': {'start': "💎 RRuzcoin: Node статусу: Активдүү ✅", 'mining': "⛏ Майニング", 'wallet': "💳 Капчык", 'dep': "🚀 Ылдамдык", 'stats': "📊 Statistika", 'card_msg': "💳 Карта: `{}`"},
+    'tj': {'start': "💎 RRuzcoin: Ҳолати Node: Фаъол ✅", 'mining': "⛏ Майニング", 'wallet': "💳 ҳамён", 'dep': "🚀 Суръат", 'stats': "📊 Омор", 'card_msg': "💳 Корт: `{}`"},
     'tm': {'start': "💎 RRuzcoin: Node ýagdaýy: Aktiw ✅", 'mining': "⛏ Maýning", 'wallet': "💳 Gapjyk", 'dep': "🚀 Tizlik", 'stats': "📊 Statistika", 'card_msg': "💳 Kart: `{}`"},
-    'ae': {'start': "💎 RRuzcoin: حالة العقدة: نشط ✅", 'mining': "⛏ التعدين", 'wallet': "💳 المحفظة", 'dep': "🚀 السرعة", 'stats': "📊 الإحصائيات", 'card_msg': "💳 البطاقة: `{}`"},
+    'ae': {'start': "💎 RRuzcoin: حالة العقدة: نشط ✅", 'mining': "⛏ التعدining", 'wallet': "💳 المحفظة", 'dep': "🚀 السرعة", 'stats': "📊 الإحصائيات", 'card_msg': "💳 البطاقة: `{}`"},
     'it': {'start': "💎 RRuzcoin: Stato del nodo: Attivo ✅", 'mining': "⛏ Mining", 'wallet': "💳 Portafoglio", 'dep': "🚀 Velocità", 'stats': "📊 Statistiche", 'card_msg': "💳 Carta: `{}`"},
     'in': {'start': "💎 RRuzcoin: नोड स्थिति: सक्रिय ✅", 'mining': "⛏ माइनिंग", 'wallet': "💳 वॉलेट", 'dep': "🚀 गति", 'stats': "📊 आंकड़े", 'card_msg': "💳 कार्ड: `{}`"},
     'br': {'start': "💎 RRuzcoin: Status do Nó: Ativo ✅", 'mining': "⛏ Mineração", 'wallet': "💳 Carteira", 'dep': "🚀 Velocidade", 'stats': "📊 Estatísticas", 'card_msg': "💳 Cartão: `{}`"},
@@ -51,10 +54,13 @@ def db_query(query, params=(), fetchone=False, commit=False):
 def init_db():
     db_query("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, b REAL DEFAULT 0, lang TEXT DEFAULT 'uz', ref_id INTEGER, status TEXT DEFAULT 'active')", commit=True)
     db_query("CREATE TABLE IF NOT EXISTS admin_p (key TEXT PRIMARY KEY, val TEXT)", commit=True)
-    db_query("INSERT OR IGNORE INTO admin_p VALUES ('pay_addr', 'Hali o‘rnatilmadi')", commit=True)
+    # SQL SINTAKSIS XATOSI TUZATILDI: (Tirnoq belgisiga e'tibor bering)
+    db_query("INSERT OR IGNORE INTO admin_p VALUES ('pay_addr', 'Hali o''rnatilmadi')", commit=True)
 
 init_db()
-bot = Bot(token=API_TOKEN, parse_mode="Markdown")
+
+# Botni PythonAnywhere proxy bilan ishga tushirish
+bot = Bot(token=API_TOKEN, parse_mode="Markdown", proxy=PROXY_URL)
 dp = Dispatcher(bot)
 
 # --- 4. KLAVIATURALAR ---
@@ -91,23 +97,24 @@ async def set_lang(c: types.CallbackQuery):
     await c.message.delete()
     await bot.send_photo(c.from_user.id, BRAND_IMG, caption=LANGS[lang]['start'], reply_markup=get_main_kb(c.from_user.id, lang))
 
-# Hamyon (Wallet) bo'limi
 @dp.callback_query_handler(lambda c: c.data == "wlt")
 async def wallet(c: types.CallbackQuery):
     user_data = db_query("SELECT b, lang FROM users WHERE id = ?", (c.from_user.id,), fetchone=True)
-    addr = db_query("SELECT val FROM admin_p WHERE key = 'pay_addr'", fetchone=True)[0]
+    addr_data = db_query("SELECT val FROM admin_p WHERE key = 'pay_addr'", fetchone=True)
+    addr = addr_data[0] if addr_data else "Sozlanmadi"
     msg = LANGS[user_data[1]]['card_msg'].format(addr)
     await bot.send_message(c.from_user.id, f"💰 Balance: `{user_data[0]:.10f} RRZC`\n\n{msg}")
 
-# Mining Sync (MA'LUMOT SAQLASH)
 @dp.message_handler(content_types=['web_app_data'])
 async def sync(m: types.Message):
-    data = json.loads(m.web_app_data.data)
-    amount = float(data.get('mined', 0))
-    db_query("UPDATE users SET b = b + ? WHERE id = ?", (amount, m.from_user.id), commit=True)
-    await m.answer(f"✅ Synced! +{amount:.10f} RRZC")
+    try:
+        data = json.loads(m.web_app_data.data)
+        amount = float(data.get('mined', 0))
+        db_query("UPDATE users SET b = b + ? WHERE id = ?", (amount, m.from_user.id), commit=True)
+        await m.answer(f"✅ Synced! +{amount:.10f} RRZC")
+    except Exception as e:
+        await m.answer("⚠️ Sync Error")
 
-# --- 6. SUPER ADMIN PANEL ---
 @dp.callback_query_handler(lambda c: c.data == "admin_root")
 async def super_adm(c: types.CallbackQuery):
     if c.from_user.id != ADMIN_ID: return
@@ -120,13 +127,14 @@ async def super_adm(c: types.CallbackQuery):
 
 @dp.callback_query_handler(lambda c: c.data == "adm_pay")
 async def adm_pay(c: types.CallbackQuery):
-    await bot.send_message(ADMIN_ID, "Yangi to'lov manzilini (karta yoki hamyon) yuboring:\nFormat: `addr 8600...` yoki `addr USDT_...`")
+    await bot.send_message(ADMIN_ID, "Yangi to'lov manzilini yuboring:\nFormat: `addr 8600...` yoki `addr USDT_...`")
 
 @dp.message_handler(lambda m: m.from_user.id == ADMIN_ID and m.text.startswith("addr "))
 async def save_addr(m: types.Message):
     new_addr = m.text.replace("addr ", "")
     db_query("UPDATE admin_p SET val = ? WHERE key = 'pay_addr'", (new_addr,), commit=True)
-    await m.answer(f"✅ Yangi anonim to'lov manzili o'rnatildi:\n`{new_addr}`")
+    await m.answer(f"✅ Yangi to'lov manzili saqlandi:\n`{new_addr}`")
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     executor.start_polling(dp, skip_updates=True)
