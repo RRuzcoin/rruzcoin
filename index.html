@@ -10,7 +10,6 @@
         :root { --gold: #ffd60a; --dark: #000814; --neon: #003566; }
         body { margin: 0; background: var(--dark); color: white; font-family: 'Orbitron', sans-serif; overflow: hidden; touch-action: none; }
         
-        /* Yuqori Panel */
         #ui { position: absolute; width: 100%; top: 20px; text-align: center; z-index: 10; }
         .glass-card { 
             background: rgba(0, 53, 102, 0.2); backdrop-filter: blur(15px);
@@ -21,14 +20,11 @@
         #balance { font-size: 32px; font-weight: 900; color: var(--gold); text-shadow: 0 0 15px rgba(255, 214, 10, 0.6); font-family: monospace; }
         .label { font-size: 10px; letter-spacing: 3px; color: rgba(255, 255, 255, 0.6); text-transform: uppercase; margin-top: 5px; }
 
-        /* Mining Stats */
         .stats-overlay { position: absolute; top: 120px; left: 20px; font-size: 12px; color: var(--gold); font-family: monospace; z-index: 5; }
 
-        /* Progress Bar */
         .progress-container { position: absolute; bottom: 140px; width: 80%; left: 10%; height: 4px; background: rgba(255,255,255,0.1); border-radius: 2px; overflow: hidden; }
-        #progress-bar { width: 0%; height: 100%; background: var(--gold); box-shadow: 0 0 10px var(--gold); transition: 0.1s; }
+        #progress-bar { width: 0%; height: 100%; background: var(--gold); box-shadow: 0 0 10px var(--gold); transition: 2s linear; }
 
-        /* Asosiy Tugma */
         #mining-btn { 
             position: absolute; bottom: 40px; left: 50%; transform: translateX(-50%);
             width: 80%; padding: 20px; font-size: 18px; font-weight: bold;
@@ -39,7 +35,6 @@
         }
         #mining-btn.active { background: #ff4d4d; color: white; box-shadow: 0 0 30px rgba(255, 77, 77, 0.4); }
         
-        /* Neon Chiziqlar */
         .scanline { width: 100%; height: 100px; background: linear-gradient(0deg, transparent, rgba(255, 214, 10, 0.05), transparent); position: absolute; top: -100px; animation: scan 4s linear infinite; pointer-events: none; }
         @keyframes scan { 0% { top: -100px; } 100% { top: 100%; } }
     </style>
@@ -56,12 +51,11 @@
 
     <div class="stats-overlay">
         <div>STATUS: <span id="node-status">STANDBY</span></div>
-        <div>SPEED: <span id="node-speed">0.0000000001</span>/s</div>
+        <div>SPEED: <span id="node-speed">0.0000000001</span>/2s</div>
         <div>STRENGTH: 98.4%</div>
     </div>
 
     <div class="progress-container"><div id="progress-bar"></div></div>
-    
     <button id="mining-btn">Initiate Mining</button>
 
     <script>
@@ -70,7 +64,8 @@
         tg.enableClosingConfirmation();
         tg.headerColor = '#000814';
 
-        let balance = parseFloat(localStorage.getItem('rruz_balance')) || 0;
+        // Avvalgi qazilgan miqdorni saqlash uchun o'zgaruvchi
+        let sessionMined = 0; 
         let speed = 0.0000000001;
         let isMining = false;
         let miningInterval;
@@ -79,9 +74,7 @@
         const balEl = document.getElementById('balance');
         const progEl = document.getElementById('progress-bar');
         const statusEl = document.getElementById('node-status');
-        balEl.innerText = balance.toFixed(10);
 
-        // Three.js Scene
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
         const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -96,8 +89,11 @@
                 new THREE.MeshStandardMaterial({ map: texture, metalness: 0.8, roughness: 0.1 }),
                 new THREE.MeshStandardMaterial({ map: texture, metalness: 0.8, roughness: 0.1 })
             ];
+            // Tik holatga keltirish uchun Cylinder geometriyasini to'g'irladik
             const coin = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.4, 80), materials);
-            coin.rotation.x = Math.PI / 2;
+            
+            // TANGANI TIKLASH: Avvalgi X o'qi bo'yicha PI/2 burish o'rniga Y o'qi bo'yicha aylantiramiz
+            coin.rotation.set(1.5, 0, 0); 
             scene.add(coin);
             
             scene.add(new THREE.AmbientLight(0xffffff, 0.5));
@@ -108,8 +104,8 @@
             function animate() {
                 requestAnimationFrame(animate);
                 if(isMining) {
-                    coin.rotation.z += 0.06;
-                    coin.position.y = Math.sin(Date.now() * 0.002) * 0.1; // Suzish effekti
+                    coin.rotation.y += 0.03; // Tik turgan holda o'z o'qi atrofida aylanadi
+                    coin.position.y = Math.sin(Date.now() * 0.002) * 0.1;
                 }
                 renderer.render(scene, camera);
             }
@@ -118,29 +114,25 @@
 
         camera.position.z = 8;
 
-        window.addEventListener('resize', () => {
-            camera.aspect = window.innerWidth / window.innerHeight;
-            camera.updateProjectionMatrix();
-            renderer.setSize(window.innerWidth, window.innerHeight);
-        });
-
         const btn = document.getElementById('mining-btn');
         btn.onclick = () => {
             if(!isMining) {
                 isMining = true;
+                sessionMined = 0; // Har safar boshlaganda noldan sanaydi
                 btn.innerText = "Terminate & Sync";
                 btn.classList.add('active');
                 statusEl.innerText = "ACTIVE";
                 statusEl.style.color = "#00ff00";
                 tg.HapticFeedback.impactOccurred('heavy');
                 
+                // TEZLIK: 2000ms = 2 soniya
                 miningInterval = setInterval(() => {
-                    balance += speed;
-                    balEl.innerText = balance.toFixed(10);
+                    sessionMined += speed;
+                    balEl.innerText = sessionMined.toFixed(10);
                     
-                    progress = (progress + 1) % 100;
+                    progress = (progress + 5) % 100;
                     progEl.style.width = progress + "%";
-                }, 100);
+                }, 2000);
             } else {
                 isMining = false;
                 btn.innerText = "Initiate Mining";
@@ -149,9 +141,11 @@
                 statusEl.style.color = "#ffd60a";
                 clearInterval(miningInterval);
                 
-                // Botga yuborish
-                tg.sendData(JSON.stringify({new_balance: balance}));
-                localStorage.setItem('rruz_balance', balance);
+                // BOTGA YUBORISH (mined kaliti bilan)
+                tg.sendData(JSON.stringify({ mined: sessionMined }));
+                
+                // Terminalni yopish (Sync tugatish uchun)
+                setTimeout(() => { tg.close(); }, 500);
             }
         };
     </script>
