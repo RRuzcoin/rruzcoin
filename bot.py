@@ -51,7 +51,7 @@ def db_query(query, params=(), fetchone=False, commit=False):
 def init_db():
     db_query("CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY, b REAL DEFAULT 0, lang TEXT DEFAULT 'uz', ref_id INTEGER, status TEXT DEFAULT 'active')", commit=True)
     db_query("CREATE TABLE IF NOT EXISTS admin_p (key TEXT PRIMARY KEY, val TEXT)", commit=True)
-    db_query("INSERT OR IGNORE INTO admin_p VALUES ('pay_addr', 'Hali o\'rnatilmadi')", commit=True)
+    db_query("INSERT OR IGNORE INTO admin_p VALUES ('pay_addr', 'Hali o‘rnatilmadi')", commit=True)
 
 init_db()
 bot = Bot(token=API_TOKEN, parse_mode="Markdown")
