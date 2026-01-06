@@ -92,7 +92,7 @@
             // Tik holatga keltirish uchun Cylinder geometriyasini to'g'irladik
             const coin = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 2.8, 0.4, 80), materials);
             
-            // TANGANI TIKLASH: Avvalgi X o'qi bo'yicha PI/2 burish o'rniga Y o'qi bo'yicha aylantiramiz
+            // TANGANI TIKLASH: Avvalgi X o'qi bo'yicha PI/2 burish o'rniga Z o'qi bo'yicha aylantiramiz
             coin.rotation.set(1.5, 0, 0); 
             scene.add(coin);
             
@@ -104,7 +104,7 @@
             function animate() {
                 requestAnimationFrame(animate);
                 if(isMining) {
-                    coin.rotation.y += 0.03; // Tik turgan holda o'z o'qi atrofida aylanadi
+                    coin.rotation.z += 0.03; // Tik turgan holda o'z o'qi atrofida aylanadi
                     coin.position.y = Math.sin(Date.now() * 0.002) * 0.1;
                 }
                 renderer.render(scene, camera);
